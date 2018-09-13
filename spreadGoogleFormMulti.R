@@ -1,5 +1,5 @@
-spreadGoogleFormMulti <- function(x,prefix = ''){
-  
+spreadGoogleFormMulti <- function(x,prefix = '',other_string='Other',fillVal=1,cutOff=NULL){
+
 # take a single column of multi select data, then split it into named columns of the options with 1's or 0's to indicat selection
   
 # remove any commas that are not delimeters
@@ -32,7 +32,7 @@ targetList <- lapply(1:length(tmp.names),FUN = function(n){
   
   # search through each response if item is in that reponse add a one to that column if its in there
   targetList[[n]] <- sapply(tmp,function(j){
-    jj = ifelse(item %in% j,1,0)
+    jj = ifelse(item %in% j,fillVal,0)
     return(jj)})
   
   
@@ -40,5 +40,29 @@ targetList <- lapply(1:length(tmp.names),FUN = function(n){
 # stick eveything together then add the right names
 tmp.df = as.data.frame(do.call(cbind,targetList))
 names(tmp.df) <- paste0(prefix,tmp.names)
+
+if(!is.null(cutOff)){
+  if(cutOff>0){
+  tmp.df$other <- rowSums(tmp.df[colSums(tmp.df)<cutOff])
+  tmp.df$other <- ifelse(tmp.df$other>0,fillVal,0)
+  
+  tmp.names <- c(names(tmp.df)[-ncol(tmp.df)],paste0(prefix,other_string))
+  names(tmp.df) <- tmp.names
+  
+  tmp.df <- tmp.df[colSums(tmp.df)>cutOff]
+  }else{
+    tmp.df$other <- rowSums(tmp.df[colSums(tmp.df)>cutOff])
+    tmp.df$other <- ifelse(tmp.df$other>0,fillVal,0)
+    
+    tmp.names <- c(names(tmp.df)[-ncol(tmp.df)],paste0(prefix,other_string))
+    names(tmp.df) <- tmp.names
+    
+    tmp.df <- tmp.df[colSums(tmp.df)<cutOff]
+    
+  }
+  
+}
+
+
 
 return(tmp.df)}
